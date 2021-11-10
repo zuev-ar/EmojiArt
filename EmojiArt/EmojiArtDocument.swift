@@ -8,15 +8,53 @@
 import SwiftUI
 
 class EmojiArtDocument: ObservableObject {
-    @Published private(set) var emojiArt: EmojiArtModel
+    @Published private(set) var emojiArt: EmojiArtModel {
+        didSet {
+            print("111111")
+            if emojiArt.background != oldValue.background {
+                fetchBackgroundImageDataIfNecessary()
+            }
+        }
+    }
+    @Published var backgroungImage: UIImage?
+    @Published var backgroundImageFetchStatus = BackgroundImageFetchStatus.idle
+    
+    var emojis: [EmojiArtModel.Emoji] { emojiArt.emojis }
+    var backgroung: EmojiArtModel.Background { emojiArt.background }
+    
+    enum BackgroundImageFetchStatus {
+        case idle
+        case fetchin
+    }
     
     init() {
         emojiArt = EmojiArtModel()
         emojiArt.addEmoji("😂", at: (-200, -100), size: 80)
     }
     
-    var emojis: [EmojiArtModel.Emoji] { emojiArt.emojis }
-    var backgroung: EmojiArtModel.Background { emojiArt.background }
+    private func fetchBackgroundImageDataIfNecessary() {
+        backgroungImage = nil
+        switch emojiArt.background {
+        case .url(let url):
+            backgroundImageFetchStatus = .fetchin
+            DispatchQueue.global(qos: .userInitiated).async {
+                print("222222")
+                let imageData = try? Data(contentsOf: url)
+                DispatchQueue.main.async { [weak self] in
+                    if self?.emojiArt.background == EmojiArtModel.Background.url(url) {
+                        self?.backgroundImageFetchStatus = .idle
+                        if imageData != nil {
+                            self?.backgroungImage = UIImage(data: imageData!)
+                        }
+                    }
+                }
+            }
+        case .imageData(let data):
+            backgroungImage = UIImage(data: data)
+        case .blank:
+            break
+        }
+    }
     
     func setBackground(_ background: EmojiArtModel.Background) {
         emojiArt.background = background
