@@ -10,7 +10,6 @@ import SwiftUI
 class EmojiArtDocument: ObservableObject {
     @Published private(set) var emojiArt: EmojiArtModel {
         didSet {
-            print("111111")
             if emojiArt.background != oldValue.background {
                 fetchBackgroundImageDataIfNecessary()
             }
@@ -38,7 +37,6 @@ class EmojiArtDocument: ObservableObject {
         case .url(let url):
             backgroundImageFetchStatus = .fetchin
             DispatchQueue.global(qos: .userInitiated).async {
-                print("222222")
                 let imageData = try? Data(contentsOf: url)
                 DispatchQueue.main.async { [weak self] in
                     if self?.emojiArt.background == EmojiArtModel.Background.url(url) {
